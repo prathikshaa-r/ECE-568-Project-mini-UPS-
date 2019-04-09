@@ -1,4 +1,4 @@
-syntax = "proto";
+syntax = "proto2";
 
 // amazon to ups
 message IConnect{
