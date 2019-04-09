@@ -1,0 +1,51 @@
+syntax = "proto";
+
+// amazon to ups
+message IConnect{
+    required int64 seqnum = 1;
+}
+
+// ups to amazon
+message IConnectResponse{
+    required int64 ack = 1;
+}
+
+// amazon to ups
+message IRequestPickUp{
+    required int32 whid = 1;
+    required int64 seqnum = 2;
+}
+
+// ups to amazon
+message IPickupConfirm{
+    required int32 truckid = 1;
+    required int64 ack = 2;
+}
+
+// ups to amazon
+message ISentPickUp{
+    required int64 seqnum = 1;
+}
+
+// amazon to ups
+message IackPickUpTruck{
+    required int64 ack = 1;
+}
+
+message UDeliveryLocation{
+    required int64 packageid = 1;
+    required int32 x = 2;
+    required int32 y = 3;
+}
+
+// amazon to ups
+message IRequestDelivery{
+    required UDeliveryLocation = 1
+    required int32 truckid = 2;
+    required int64 seqnum = 3;
+}
+
+// ups to amazon
+message IackDeliveryRequest{
+    required int64 ack = 1;
+}
