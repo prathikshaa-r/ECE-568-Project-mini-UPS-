@@ -49,15 +49,16 @@ if __name__ == "__main__":
     test()
     pass
 
+#-----------------------------sender-----------------------------#
 """
 add a sub object to command
 """
 def add_to_uacommand(command, sub_object):
     if sub_object.type is 'truck':
-        command.Truck.append(sub_object.truck)
+        command.Truck.extend([sub_object.truck,])
         pass
     elif sub_object.type is 'delivered':
-        command.Delivered.append(sub_object.delivered_msg)
+        command.Delivered.extend([sub_object.delivered_msg,])
         pass
     return command
 
@@ -65,22 +66,35 @@ def add_to_uacommand(command, sub_object):
 class TruckWrapper:
     def __init__(self, wh_id, t_id, p_id, seq_num):
         self.truck = Truck()
-        truck.whid = wh_id
-        truck.truckid = t_id
-        truck.packageid = p_id
-        truck.seqnum = seq_num
+        self.truck.whid = wh_id
+        self.truck.truckid = t_id
+        self.truck.packageid = p_id
+        self.truck.seqnum = seq_num
+
         self.type = 'truck'
         return
-
+    pass
 
 class DeliveredWrapper:
     def __init__(self, p_id, seq_num):
         self.delivered_msg = Delivered()
-        delivered_msg.packageid = p_id
-        delivered_msg.seqnum = seq_num
+        self.delivered_msg.packageid = p_id
+        self.delivered_msg.seqnum = seq_num
+
         self.type = 'delivered'
         return
+    pass
 
+def test_uacommand():
+    delivered = DeliveredWrapper(1, 2)
+    truckSent = TruckWrapper(1, 2, 3, 3)
+    send = UACommands()
+    add_to_uacommand(send, truckSent)
+    add_to_uacommand(send, delivered)
+    
+    return
+
+test_uacommand()
 
 #-----------------------receiver-------------------------#
 
