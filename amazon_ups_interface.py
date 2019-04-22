@@ -9,7 +9,8 @@ import pdb
 import time
 
 HOST = 'vcm-9314.vm.duke.edu'  # The server's hostname or IP address
-PORT = 12345        # The port used by the server
+WORLD_PORT = 12345
+AMAZON_PORT = 34567            # Listen at this port for amazon
 
 
 def recvMod(sock):
@@ -36,20 +37,10 @@ def sendCommand(command, sock):
 
 def test():
 
-    conn_req = UConnect()
-    conn_req.isAmazon = False
-    ENCODED_MESSAGE = conn_req.SerializeToString()
-    
-
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.connect((HOST, PORT))
-
-        sendallMod(ENCODED_MESSAGE,s)
-        encoded_response = recvMod(s)
-        conn_resp = UConnected()
-        conn_resp.ParseFromString(encoded_response)
+        s.bind((socket.gethostname(), AMAZON_PORT))
+        print("Listening on port: %s for Amazon." % AMAZON_PORT)
         
-        print("REQUEST :\n {} \n\nRESPONSE\n : {}\n\n".format(conn_req.__str__(),conn_resp.__str__()))
         s.close()
 
 if __name__ == "__main__":
