@@ -8,6 +8,8 @@ import socket
 import pdb
 import time
 
+import math
+
 HOST = 'vcm-9314.vm.duke.edu'  # The server's hostname or IP address
 WORLD_PORT = 12345
 AMAZON_PORT = 34567            # Listen at this port for amazon
@@ -62,19 +64,66 @@ def add_to_uacommand(command, sub_object):
 
 class TruckWrapper:
     def __init__(self, wh_id, t_id, p_id, seq_num):
-        truck = Truck()
+        self.truck = Truck()
         truck.whid = wh_id
         truck.truckid = t_id
         truck.packageid = p_id
         truck.seqnum = seq_num
-        type = 'truck'
+        self.type = 'truck'
         return
 
 
-class Delivered_Wrapper:
+class DeliveredWrapper:
     def __init__(self, p_id, seq_num):
-        delivered_msg = Delivered()
+        self.delivered_msg = Delivered()
         delivered_msg.packageid = p_id
         delivered_msg.seqnum = seq_num
-        type = 'delivered'
+        self.type = 'delivered'
         return
+
+
+#-----------------------receiver-------------------------#
+
+
+
+
+
+#----------------------locations------------------------#
+class location:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        return
+
+class distance:
+    def __init__(self, point1, point2):
+        self.point1 = point1
+        self.point2 = point2
+        return
+
+    def __repr__(self):
+        print("Point 1: ({}, {})".format(self.point1.x, self.point1.y))
+        print("Point 2: ({}, {})".format(self.point2.x, self.point2.y))
+        return ""
+
+    def setStart(self, point1):
+        self.point1 = point1
+        return
+
+    def setEnd(self, point2):
+        self.point2 = point2
+
+    def getDistance(self):
+        self.distance = math.sqrt((self.point2.x - self.point1.x)**2 + (self.point2.y - self.point1.y)**2 )
+        return self.distance
+
+    pass
+
+def test_distance():
+    point1 = location(1,2)
+    point2 = location(3,4)
+
+    dist = distance(point1, point2)
+    print(dist)
+    print(dist.getDistance())
+    return
