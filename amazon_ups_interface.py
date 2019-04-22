@@ -39,7 +39,7 @@ def test():
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind((socket.gethostname(), AMAZON_PORT))
-        print("Listening on port: %s for Amazon." % AMAZON_PORT)
+        print("Listening on port: {} for Amazon.".format(AMAZON_PORT))
         
         s.close()
 
