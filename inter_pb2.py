@@ -18,7 +18,7 @@ _sym_db = _symbol_database.Default()
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='inter.proto',
   package='',
-  serialized_pb=_b('\n\x0binter.proto\":\n\x07Product\x12\n\n\x02id\x18\x01 \x02(\x05\x12\x13\n\x0b\x64\x65scription\x18\x02 \x02(\t\x12\x0e\n\x06\x61mount\x18\x03 \x02(\x05\"{\n\x05Order\x12\x0c\n\x04whid\x18\x01 \x02(\x05\x12\t\n\x01x\x18\x02 \x02(\x05\x12\t\n\x01y\x18\x03 \x02(\x05\x12\x11\n\tpackageid\x18\x04 \x02(\x03\x12\x13\n\x0bupsusername\x18\x05 \x02(\t\x12\x16\n\x04item\x18\x06 \x02(\x0b\x32\x08.Product\x12\x0e\n\x06seqnum\x18\x07 \x02(\x03\",\n\x07\x44\x65liver\x12\x11\n\tpackageid\x18\x01 \x02(\x03\x12\x0e\n\x06seqnum\x18\x02 \x02(\x03\"=\n\tWarehouse\x12\n\n\x02id\x18\x01 \x02(\x05\x12\t\n\x01x\x18\x02 \x02(\x05\x12\t\n\x01y\x18\x03 \x02(\x05\x12\x0e\n\x06seqnum\x18\x04 \x02(\x03\"j\n\nAUCommands\x12\x15\n\x05order\x18\x01 \x03(\x0b\x32\x06.Order\x12\x1b\n\ttodeliver\x18\x02 \x03(\x0b\x32\x08.Deliver\x12\x1a\n\x06whinfo\x18\x03 \x03(\x0b\x32\n.Warehouse\x12\x0c\n\x04\x61\x63ks\x18\x04 \x03(\x03\"I\n\x05Truck\x12\x0c\n\x04whid\x18\x01 \x02(\x05\x12\x0f\n\x07truckid\x18\x02 \x02(\x05\x12\x11\n\tpackageid\x18\x03 \x02(\x03\x12\x0e\n\x06seqnum\x18\x04 \x02(\x03\".\n\tDelivered\x12\x11\n\tpackageid\x18\x01 \x02(\x03\x12\x0e\n\x06seqnum\x18\x02 \x02(\x03\"O\n\nUACommands\x12\x17\n\x07\x61rrived\x18\x01 \x03(\x0b\x32\x06.Truck\x12\x1a\n\x06\x66inish\x18\x02 \x03(\x0b\x32\n.Delivered\x12\x0c\n\x04\x61\x63ks\x18\x03 \x03(\x03')
+  serialized_pb=_b('\n\x0binter.proto\":\n\x07Product\x12\n\n\x02id\x18\x01 \x02(\x05\x12\x13\n\x0b\x64\x65scription\x18\x02 \x02(\t\x12\x0e\n\x06\x61mount\x18\x03 \x02(\x05\"{\n\x05Order\x12\x0c\n\x04whid\x18\x01 \x02(\x05\x12\t\n\x01x\x18\x02 \x02(\x05\x12\t\n\x01y\x18\x03 \x02(\x05\x12\x11\n\tpackageid\x18\x04 \x02(\x03\x12\x13\n\x0bupsusername\x18\x05 \x02(\t\x12\x16\n\x04item\x18\x06 \x03(\x0b\x32\x08.Product\x12\x0e\n\x06seqnum\x18\x07 \x02(\x03\",\n\x07\x44\x65liver\x12\x11\n\tpackageid\x18\x01 \x02(\x03\x12\x0e\n\x06seqnum\x18\x03 \x02(\x03\">\n\nAWarehouse\x12\n\n\x02id\x18\x01 \x02(\x05\x12\t\n\x01x\x18\x02 \x02(\x05\x12\t\n\x01y\x18\x03 \x02(\x05\x12\x0e\n\x06seqnum\x18\x04 \x02(\x03\"k\n\nAUCommands\x12\x15\n\x05order\x18\x01 \x03(\x0b\x32\x06.Order\x12\x1b\n\ttodeliver\x18\x02 \x03(\x0b\x32\x08.Deliver\x12\x1b\n\x06whinfo\x18\x03 \x03(\x0b\x32\x0b.AWarehouse\x12\x0c\n\x04\x61\x63ks\x18\x04 \x03(\x03\"I\n\x05Truck\x12\x0c\n\x04whid\x18\x01 \x02(\x05\x12\x0f\n\x07truckid\x18\x02 \x02(\x05\x12\x11\n\tpackageid\x18\x03 \x02(\x03\x12\x0e\n\x06seqnum\x18\x04 \x02(\x03\".\n\tDelivered\x12\x11\n\tpackageid\x18\x01 \x02(\x03\x12\x0e\n\x06seqnum\x18\x02 \x02(\x03\"O\n\nUACommands\x12\x17\n\x07\x61rrived\x18\x01 \x03(\x0b\x32\x06.Truck\x12\x1a\n\x06\x66inish\x18\x02 \x03(\x0b\x32\n.Delivered\x12\x0c\n\x04\x61\x63ks\x18\x03 \x03(\x03')
 )
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
@@ -113,8 +113,8 @@ _ORDER = _descriptor.Descriptor(
       options=None),
     _descriptor.FieldDescriptor(
       name='item', full_name='Order.item', index=5,
-      number=6, type=11, cpp_type=10, label=2,
-      has_default_value=False, default_value=None,
+      number=6, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
@@ -157,7 +157,7 @@ _DELIVER = _descriptor.Descriptor(
       options=None),
     _descriptor.FieldDescriptor(
       name='seqnum', full_name='Deliver.seqnum', index=1,
-      number=2, type=3, cpp_type=2, label=2,
+      number=3, type=3, cpp_type=2, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -178,36 +178,36 @@ _DELIVER = _descriptor.Descriptor(
 )
 
 
-_WAREHOUSE = _descriptor.Descriptor(
-  name='Warehouse',
-  full_name='Warehouse',
+_AWAREHOUSE = _descriptor.Descriptor(
+  name='AWarehouse',
+  full_name='AWarehouse',
   filename=None,
   file=DESCRIPTOR,
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='id', full_name='Warehouse.id', index=0,
+      name='id', full_name='AWarehouse.id', index=0,
       number=1, type=5, cpp_type=1, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='x', full_name='Warehouse.x', index=1,
+      name='x', full_name='AWarehouse.x', index=1,
       number=2, type=5, cpp_type=1, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='y', full_name='Warehouse.y', index=2,
+      name='y', full_name='AWarehouse.y', index=2,
       number=3, type=5, cpp_type=1, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='seqnum', full_name='Warehouse.seqnum', index=3,
+      name='seqnum', full_name='AWarehouse.seqnum', index=3,
       number=4, type=3, cpp_type=2, label=2,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
@@ -225,7 +225,7 @@ _WAREHOUSE = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=246,
-  serialized_end=307,
+  serialized_end=308,
 )
 
 
@@ -275,8 +275,8 @@ _AUCOMMANDS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=309,
-  serialized_end=415,
+  serialized_start=310,
+  serialized_end=417,
 )
 
 
@@ -326,8 +326,8 @@ _TRUCK = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=417,
-  serialized_end=490,
+  serialized_start=419,
+  serialized_end=492,
 )
 
 
@@ -363,8 +363,8 @@ _DELIVERED = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=492,
-  serialized_end=538,
+  serialized_start=494,
+  serialized_end=540,
 )
 
 
@@ -407,20 +407,20 @@ _UACOMMANDS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=540,
-  serialized_end=619,
+  serialized_start=542,
+  serialized_end=621,
 )
 
 _ORDER.fields_by_name['item'].message_type = _PRODUCT
 _AUCOMMANDS.fields_by_name['order'].message_type = _ORDER
 _AUCOMMANDS.fields_by_name['todeliver'].message_type = _DELIVER
-_AUCOMMANDS.fields_by_name['whinfo'].message_type = _WAREHOUSE
+_AUCOMMANDS.fields_by_name['whinfo'].message_type = _AWAREHOUSE
 _UACOMMANDS.fields_by_name['arrived'].message_type = _TRUCK
 _UACOMMANDS.fields_by_name['finish'].message_type = _DELIVERED
 DESCRIPTOR.message_types_by_name['Product'] = _PRODUCT
 DESCRIPTOR.message_types_by_name['Order'] = _ORDER
 DESCRIPTOR.message_types_by_name['Deliver'] = _DELIVER
-DESCRIPTOR.message_types_by_name['Warehouse'] = _WAREHOUSE
+DESCRIPTOR.message_types_by_name['AWarehouse'] = _AWAREHOUSE
 DESCRIPTOR.message_types_by_name['AUCommands'] = _AUCOMMANDS
 DESCRIPTOR.message_types_by_name['Truck'] = _TRUCK
 DESCRIPTOR.message_types_by_name['Delivered'] = _DELIVERED
@@ -447,12 +447,12 @@ Deliver = _reflection.GeneratedProtocolMessageType('Deliver', (_message.Message,
   ))
 _sym_db.RegisterMessage(Deliver)
 
-Warehouse = _reflection.GeneratedProtocolMessageType('Warehouse', (_message.Message,), dict(
-  DESCRIPTOR = _WAREHOUSE,
+AWarehouse = _reflection.GeneratedProtocolMessageType('AWarehouse', (_message.Message,), dict(
+  DESCRIPTOR = _AWAREHOUSE,
   __module__ = 'inter_pb2'
-  # @@protoc_insertion_point(class_scope:Warehouse)
+  # @@protoc_insertion_point(class_scope:AWarehouse)
   ))
-_sym_db.RegisterMessage(Warehouse)
+_sym_db.RegisterMessage(AWarehouse)
 
 AUCommands = _reflection.GeneratedProtocolMessageType('AUCommands', (_message.Message,), dict(
   DESCRIPTOR = _AUCOMMANDS,
