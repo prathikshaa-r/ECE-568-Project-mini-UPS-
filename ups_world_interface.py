@@ -9,33 +9,13 @@ import pdb
 import time
 
 import math
-
-HOST = 'vcm-9314.vm.duke.edu'  # The server's hostname or IP address
+import io
+from communication import * 
+WORLD_HOST = 'vcm-9314.vm.duke.edu'  # The server's hostname or IP address
 WORLD_PORT = 12345
 AMAZON_PORT = 34567            # Listen at this port for amazon
+import pdb
 
-
-def recvMod(sock):
-    var_int_buff = []
-    while True:
-        buf = sock.recv(1)
-        var_int_buff += buf
-        msg_len, new_pos = _DecodeVarint32(var_int_buff, 0)
-        if new_pos != 0:
-            break
-    whole_message = sock.recv(msg_len)
-    return whole_message
-
-def sendallMod(mess,sock):
-    _EncodeVarint(sock.send, len(mess), None)
-    sock.sendall(mess)
-    return
-
-
-def sendCommand(command, sock):
-    mess = command.SerializeToString()
-    sendallMod(mess,sock)
-    
 
 def test():
 
@@ -62,6 +42,8 @@ def add_to_world_command(command, sub_object):
         pass
     elif sub_object.type is 'uQuery':
         command.queries.extend([sub_object.query,])
+    elif sub_object.type is 'uInitTruck':
+        command.queries.extend([sub_object.init_truck,])
     return command
 
 def add_ack_to_world_command(command, ack):
@@ -89,6 +71,15 @@ class PickupFromWarehouse:
         return
     pass
 
+class InitializeTruck:
+    def __init__(self,t_id,x,y):
+        self.init_truck = UInitTruck()
+        self.init_truck.id = t_id
+        self.init_truck.x = x
+        self.init_truck.y = y
+        self.type = 'uInitTruck'
+        return
+    pass
 
 class DeliveryLocation:
     def __init__(self, p_id, x, y):
@@ -149,8 +140,109 @@ def test_world_commands():
 
     return
 
-test_world_commands()
 
+def test_new(sock):
+    conn_req = UConnect()
+    conn_req.isAmazon = False
+    conn_req.worldid = 13
+    #trucks = [InitializeTruck(x,0,0) for x in range(0,10)]
+    #trucks = [x.init_truck for x in trucks]
+    #conn_req.trucks.extend(trucks)
+
+    ENCODED_MESSAGE = conn_req.SerializeToString()
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+    sock.connect((WORLD_HOST, WORLD_PORT))
+    sendallMod(ENCODED_MESSAGE,sock)
+
+    encoded_response = recvMod(sock)
+    conn_resp = UConnected()
+    conn_resp.ParseFromString(encoded_response)
+    print("REQUEST :\n {} \n\nRESPONSE\n : {}\n\n".format(conn_req.__str__(),conn_resp.__str__()))
+    
+
+def test_command(sock):
+    send = UCommands()
+    pickup = PickupFromWarehouse(1,1,1)
+    delivery_location = DeliveryLocation(10, 3, 4)
+    del_locs = [delivery_location,]
+    #del_locs = [d.delivery_location for d in del_locs]
+    make_delivery = MakeDelivery(9, del_locs, 5)
+
+    query = QueryTruck(2, 6)
+    add_to_world_command(send, pickup)
+    add_to_world_command(send, pickup)
+    add_to_world_command(send, make_delivery)
+    add_to_world_command(send, query)
+    ENCODED_MESSAGE = send.SerializeToString()
+    sendallMod(ENCODED_MESSAGE,sock)
+    encoded_response = recvMod(sock)
+    conn_resp = UResponses()
+    conn_resp.ParseFromString(encoded_response)
+    print("REQUEST :\n {} \n\nRESPONSE\n : {}\n\n".format(send.__str__(),conn_resp.__str__()))
+
+
+def test_command(sock):
+    send = UCommands()
+    pickup = PickupFromWarehouse(2,1,1)
+    delivery_location = DeliveryLocation(10, 3, 4)
+    del_locs = [delivery_location,]
+    #del_locs = [d.delivery_location for d in del_locs]
+    make_delivery = MakeDelivery(9, del_locs, 5)
+
+    query = QueryTruck(2, 6)
+    add_to_world_command(send, pickup)
+    add_to_world_command(send, pickup)
+    add_to_world_command(send, make_delivery)
+    add_to_world_command(send, query)
+    ENCODED_MESSAGE = send.SerializeToString()
+    sendallMod(ENCODED_MESSAGE,sock)
+    encoded_response = recvMod(sock)
+    conn_resp = UResponses()
+    conn_resp.ParseFromString(encoded_response)
+    print("REQUEST :\n {} \n\nRESPONSE\n : {}\n\n".format(send.__str__(),conn_resp.__str__()))
+
+def test_init(sock):
+
+    pickup = PickupFromWarehouse(1,1,1)
+    delivery_location = DeliveryLocation(10, 3, 4)
+    del_locs = [delivery_location,]
+    #del_locs = [d.delivery_location for d in del_locs]
+    make_delivery = MakeDelivery(9, del_locs, 5)
+
+    query = QueryTruck(100, 6)
+    add_to_world_command(send, pickup)
+    add_to_world_command(send, pickup)
+    add_to_world_command(send, make_delivery)
+    add_to_world_command(send, query)
+    ENCODED_MESSAGE = send.SerializeToString()
+    sendallMod(ENCODED_MESSAGE,sock)
+    encoded_response = recvMod(sock)
+    conn_resp = UResponses()
+    conn_resp.ParseFromString(encoded_response)
+    print("REQUEST :\n {} \n\nRESPONSE\n : {}\n\n".format(send.__str__(),conn_resp.__str__()))
+    
+    
+
+    
+#test_world_commands()
+
+
+
+'''send = UCommands()
+pickup = PickupFromWarehouse(1,1,1)
+delivery_location = DeliveryLocation(10, 3, 4)
+del_locs = [delivery_location,]
+#del_locs = [d.delivery_location for d in del_locs]
+make_delivery = MakeDelivery(9, del_locs, 5)
+
+query = QueryTruck(100, 6)
+add_to_world_command(send, pickup)
+add_to_world_command(send, pickup)
+add_to_world_command(send, make_delivery)
+add_to_world_command(send, query)
+
+print(send)
+'''
 
 #-----------------------receiver-------------------------#
 

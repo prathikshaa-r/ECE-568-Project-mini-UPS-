@@ -9,32 +9,11 @@ import pdb
 import time
 
 import math
+from communication import * 
 
 HOST = 'vcm-9314.vm.duke.edu'  # The server's hostname or IP address
 WORLD_PORT = 12345
 AMAZON_PORT = 34567            # Listen at this port for amazon
-
-
-def recvMod(sock):
-    var_int_buff = []
-    while True:
-        buf = sock.recv(1)
-        var_int_buff += buf
-        msg_len, new_pos = _DecodeVarint32(var_int_buff, 0)
-        if new_pos != 0:
-            break
-    whole_message = sock.recv(msg_len)
-    return whole_message
-
-def sendallMod(mess,sock):
-    _EncodeVarint(sock.send, len(mess), None)
-    sock.sendall(mess)
-    return
-
-
-def sendCommand(command, sock):
-    mess = command.SerializeToString()
-    sendallMod(mess,sock)
     
 
 def test():
