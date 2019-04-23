@@ -2,6 +2,7 @@ from google.protobuf.internal.decoder import _DecodeVarint32
 from google.protobuf.internal.encoder import _EncodeVarint
 
 from world_ups_pb2 import *
+from world_amazon_pb2 import *
 from inter_pb2 import * 
 
 import socket
@@ -48,23 +49,127 @@ def test():
 if __name__ == "__main__":
     test()
     pass
-
+#---------------------------amazon to ups---------------------------#
 #-----------------------------sender-----------------------------#
 """
 add a sub object to command
 """
-def add_to_world_command(command, sub_object):
-    if sub_object.type is 'uGoPickup':
-        command.pickups.extend([sub_object.pickup_request,])
+def add_to_au_command(command, sub_object):
+    if sub_object.type is 'order':
+        command.order.extend([sub_object.order,])
         pass
-    elif sub_object.type is 'uGoDeliver':
-        command.deliveries.extend([sub_object.make_delivery,])
+    elif sub_object.type is 'deliver':
+        command.todeliver.extend([sub_object.request_delivery,])
         pass
-    elif sub_object.type is 'uQuery':
-        command.queries.extend([sub_object.query,])
+    elif sub_object.type is 'warehouse':
+        command.whinfo.extend([sub_object.warehouse,])
     return command
 
-def add_ack_to_world_command(command, ack):
+def add_ack_to_au_command(command, ack):
+    command.acks.extend([ack,])
+    return
+
+#------------------sender wrappers----------------#
+class ProductWrapper:
+    def __init__(self, prod_id, desc, amt):
+        self.product = Product()
+        self.product.id = prod_id
+        self.product.description = desc
+        self.product.amount = amt
+
+        self.type = 'product'
+        return
+    pass
+
+
+class OrderWrapper:
+    def __init__(self, w_id, x, y, p_id, ups_username, products, seq_num):
+        products = list(map(lambda p : p.product if type(p) is ProductWrapper else p, products))
+        self.order = Order()
+        self.order.whid = w_id
+        self.order.x = x
+        self.order.y = y
+        self.order.packageid = p_id
+        self.order.upsusername = ups_username
+
+        self.order.item.extend(products)
+
+        self.order.seqnum = seq_num
+
+        self.type = 'order'
+        return
+    pass
+
+class DeliverWrapper:
+    def __init__(self, p_id, seq_num):
+        self.request_delivery = Deliver()
+        self.request_delivery.packageid = p_id
+        self.request_delivery.seqnum = seq_num
+
+        self.type = 'deliver'
+        return
+    pass
+
+class WarehouseInfo:
+    def __init__(self, w_id, x, y, seq_num):
+        self.warehouse = AWarehouse()
+        self.warehouse.id = w_id
+        self.warehouse.x = x
+        self.warehouse.y = y
+        self.warehouse.seqnum = seq_num
+
+        self.type = 'warehouse'
+        return
+    pass
+
+def test_au_commands():
+    send = AUCommands()
+    product1 = ProductWrapper(1,"test_product", 10)
+    product2 = ProductWrapper(2, "test2+product", 20)
+    product3 = ProductWrapper(1, "test_product", 15)
+
+    products = [product1, product2, product3]
+    
+    order1 = OrderWrapper(1, 3, 4, 1, "user1", products, 1)
+
+    order2 = OrderWrapper(2, 10, 6, 2, "user2", products, 2)
+
+    warehouse1 = WarehouseInfo(1, 5, 8, 3)
+    warehouse2 = WarehouseInfo(2, 3, 8, 4)
+
+    deliver1 = DeliverWrapper(1, 5)
+    deliver2 = DeliverWrapper(2, 6)
+    
+    add_to_au_command(send, order1)
+    add_to_au_command(send, order2)
+    add_to_au_command(send, warehouse1)
+    add_to_au_command(send, warehouse2)
+    add_to_au_command(send, deliver1)
+    add_to_au_command(send, deliver2)
+    
+    print(send)
+
+    return
+
+test_au_commands()
+
+#---------------------------amazon to world---------------------------#
+#-----------------------------sender-----------------------------#
+"""
+add a sub object to command
+"""
+def add_to_amazon_world_command(command, sub_object):
+    if sub_object.type is 'order':
+        command.order.extend([sub_object.pickup_request,])
+        pass
+    elif sub_object.type is 'deliver':
+        command.todeliver.extend([sub_object.make_delivery,])
+        pass
+    elif sub_object.type is 'warehouse':
+        command.whinfo.extend([sub_object.query,])
+    return command
+
+def add_ack_to_amazon_world_command(command, ack):
     command.acks.extend([ack,])
     return
 
@@ -77,80 +182,4 @@ def disconnect_world(command):
     command.disconnect = True
     return
 
-#------------------sender wrappers----------------#
-class PickupFromWarehouse:
-    def __init__(self, t_id, w_id, seq_num):
-        self.pickup_request = UGoPickup()
-        self.pickup_request.truckid = t_id
-        self.pickup_request.whid = w_id
-        self.pickup_request.seqnum = seq_num
-
-        self.type = 'uGoPickup'
-        return
-    pass
-
-
-class DeliveryLocation:
-    def __init__(self, p_id, x, y):
-        self.delivery_location = UDeliveryLocation()
-        self.delivery_location.packageid = p_id
-        self.delivery_location.x = x
-        self.delivery_location.y = y
-
-        self.type = 'uDeliveryLocation'
-        return
-    pass
-
-class MakeDelivery:
-    def __init__(self, t_id, del_locs, seq_num):
-        '''        for del_loc in del_locs:
-            if type(del_loc) is DeliveryLocation:
-                del_loc = del_loc.delivery_location'''
-        del_locs = list(map(lambda d : d.delivery_location if type(d) is DeliveryLocation else d, del_locs))
-        print(del_locs)
-        self.make_delivery = UGoDeliver()
-        self.make_delivery.truckid = t_id
-        self.make_delivery.packages.extend(del_locs) # enter a list of DeliveryLocation objs
-        self.make_delivery.seqnum = seq_num
-
-        self.type = 'uGoDeliver'
-        return
-
-    def AddDeliveryLocation(del_loc):
-        self.make_delivery.packages
-        return
-    pass
-        
-class QueryTruck:
-    def __init__(self, t_id, seq_num):
-        self.query = UQuery()
-        self.query.truckid = t_id
-        self.query.seqnum = seq_num
-
-        self.type = 'uQuery'
-        return
-    pass
-
-def test_world_commands():
-    send = UCommands()
-    pickup = PickupFromWarehouse(1,1,1)
-    delivery_location = DeliveryLocation(10, 3, 4)
-    del_locs = [delivery_location,]
-    #del_locs = [d.delivery_location for d in del_locs]
-    make_delivery = MakeDelivery(9, del_locs, 5)
-
-    query = QueryTruck(100, 6)
-    add_to_world_command(send, pickup)
-    add_to_world_command(send, pickup)
-    add_to_world_command(send, make_delivery)
-    add_to_world_command(send, query)
-
-    print(send)
-
-    return
-
-test_world_commands()
-
-
-#-----------------------receiver-------------------------#
 
