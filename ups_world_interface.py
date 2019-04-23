@@ -117,7 +117,7 @@ class MakeDelivery:
         return
 
     def AddDeliveryLocation(del_loc):
-        self.make_delivery.packages
+        self.make_delivery.packages.extend([del_loc,])
         return
     pass
         
