@@ -58,7 +58,7 @@ def add_to_world_command(command, sub_object):
         command.pickups.extend([sub_object.pickup_request,])
         pass
     elif sub_object.type is 'uGoDeliver':
-        command.deliveries.extend([sub_object.delivery_request,])
+        command.deliveries.extend([sub_object.make_delivery,])
         pass
     elif sub_object.type is 'uQuery':
         command.queries.extend([sub_object.query,])
@@ -83,7 +83,7 @@ class PickupFromWarehouse:
         self.pickup_request = UGoPickup()
         self.pickup_request.truckid = t_id
         self.pickup_request.whid = w_id
-        self.pickup_request.seq_num = seq_num
+        self.pickup_request.seqnum = seq_num
 
         self.type = 'uGoPickup'
         return
@@ -103,6 +103,11 @@ class DeliveryLocation:
 
 class MakeDelivery:
     def __init__(self, t_id, del_locs, seq_num):
+        '''        for del_loc in del_locs:
+            if type(del_loc) is DeliveryLocation:
+                del_loc = del_loc.delivery_location'''
+        del_locs = list(map(lambda d : d.delivery_location if type(d) is DeliveryLocation else d, del_locs))
+        print(del_locs)
         self.make_delivery = UGoDeliver()
         self.make_delivery.truckid = t_id
         self.make_delivery.packages.extend(del_locs) # enter a list of DeliveryLocation objs
@@ -110,8 +115,12 @@ class MakeDelivery:
 
         self.type = 'uGoDeliver'
         return
-    pass
 
+    def AddDeliveryLocation(del_loc):
+        self.make_delivery.packages
+        return
+    pass
+        
 class QueryTruck:
     def __init__(self, t_id, seq_num):
         self.query = UQuery()
@@ -122,42 +131,26 @@ class QueryTruck:
         return
     pass
 
+def test_world_commands():
+    send = UCommands()
+    pickup = PickupFromWarehouse(1,1,1)
+    delivery_location = DeliveryLocation(10, 3, 4)
+    del_locs = [delivery_location,]
+    #del_locs = [d.delivery_location for d in del_locs]
+    make_delivery = MakeDelivery(9, del_locs, 5)
 
-class TruckWrapper:
-    def __init__(self, wh_id, t_id, p_id, seq_num):
-        self.truck = Truck()
-        self.truck.whid = wh_id
-        self.truck.truckid = t_id
-        self.truck.packageid = p_id
-        self.truck.seqnum = seq_num
-
-        self.type = 'truck'
-        return
-    pass
-
-class DeliveredWrapper:
-    def __init__(self, p_id, seq_num):
-        self.delivered_msg = Delivered()
-        self.delivered_msg.packageid = p_id
-        self.delivered_msg.seqnum = seq_num
-
-        self.type = 'delivered'
-        return
-    pass
-
-def test_uacommand():
-    delivered = DeliveredWrapper(1, 2)
-    truckSent = TruckWrapper(1, 2, 3, 3)
-    send = UACommands()
-    add_to_uacommand(send, truckSent)
-    add_to_uacommand(send, truckSent)
-    add_to_uacommand(send, delivered)
+    query = QueryTruck(100, 6)
+    add_to_world_command(send, pickup)
+    add_to_world_command(send, pickup)
+    add_to_world_command(send, make_delivery)
+    add_to_world_command(send, query)
 
     print(send)
-    
+
     return
 
-test_uacommand()
+test_world_commands()
+
 
 #-----------------------receiver-------------------------#
 
