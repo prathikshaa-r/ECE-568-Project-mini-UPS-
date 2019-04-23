@@ -183,3 +183,20 @@ def disconnect_world(command):
     return
 
 
+
+
+class AmazonProducts:
+    def __init__(self, prod_id, desc, amt):
+        self.aProduct = AProduct()
+        self.aProduct.id = prod_id
+        self.aProduct.description = desc
+        self.aProduct.count = amt
+
+        self.type = 'aProduct'
+        return
+    pass
+
+class BuyMore:
+    def __init__(self, w_id, amazon_products, seq_num):
+        self.buy_more = APurchaseMore()
+        
