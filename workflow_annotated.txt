@@ -1,0 +1,48 @@
+UPS connects to world
+       UConnect()
+       UInitTruck() list
+<=========>
+Amazon Connects to World
+       Aconnect()
+       AInittWarehouse() list
+---------------------------------------------wait
+Amazon Connects to UPS
+
+UPS - socket accept
+nothing
+---------------------------------------------wait
+Amazon gets a Buy Request
+---------------------------------------------wait
+Amazon sends a Buy request to UPS (internal)
+       Order()
+       Product() List
+---------------------------------------------wait
+Amazon sends request to world to pack package
+       APack()
+       AProduct() list   (id, description, count)
+
+World Responds with package ready
+      APacked()
+<========>
+
+UPS sends pickup request for truck
+      UGoPickup()
+World responds with truck at warehouse
+      UFinished()
+---------------------------------------------wait
+UPS sends truck to amazon
+    Truck()
+---------------------------------------------wait
+Amazon loads packages onto truck
+      APutOnTruck()
+World tells amazon packages are loaded
+      ALoaded()
+---------------------------------------------wait
+Amazon tells UPS the packages are loaded
+       Deliver()
+---------------------------------------------wait
+UPS tells world UGo Deliver
+World tells ups delivered!
+      UDeliveryMade()
+UPS tells Amazon delivery complete
+      Delivered()

@@ -1,0 +1,23 @@
+UPS connects to world
+<=========>
+Amazon Connects to World
+---------------------------------------------wait
+Amazon Connects to UPS
+---------------------------------------------wait
+Amazon gets a Buy Request
+---------------------------------------------wait
+Amazon sends a Buy request to UPS (internal)
+---------------------------------------------wait
+Amazon sends request to world to pack package
+World Responds with package ready
+<========>
+UPS sends pickup request for truck
+World responds with truck at warehouse
+---------------------------------------------wait
+Amazon loads packages onto truck
+World tells amazon packages are loaded
+---------------------------------------------wait
+Amazon tells UPS the packages are loaded
+---------------------------------------------wait
+UPS tells world UGo Deliver
+World tells ups delivered!
