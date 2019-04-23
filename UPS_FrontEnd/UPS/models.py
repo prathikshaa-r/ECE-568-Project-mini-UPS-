@@ -27,5 +27,3 @@ class IncomingSeqUA(models.Model):
 class OutgoingSeqUA(models.Model):
     sequence_number = models.IntegerField(primary_key = True)
     acked = models.BooleanField(default = False)
-
-    
