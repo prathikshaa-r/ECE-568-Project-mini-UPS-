@@ -55,10 +55,10 @@ add a sub object to command
 """
 def add_to_uacommand(command, sub_object):
     if sub_object.type is 'truck':
-        command.Truck.extend([sub_object.truck,])
+        command.arrived.extend([sub_object.truck,])
         pass
     elif sub_object.type is 'delivered':
-        command.Delivered.extend([sub_object.delivered_msg,])
+        command.finish.extend([sub_object.delivered_msg,])
         pass
     return command
 
@@ -90,7 +90,10 @@ def test_uacommand():
     truckSent = TruckWrapper(1, 2, 3, 3)
     send = UACommands()
     add_to_uacommand(send, truckSent)
+    add_to_uacommand(send, truckSent)
     add_to_uacommand(send, delivered)
+
+    print(send)
     
     return
 
