@@ -125,11 +125,11 @@ if __name__ == "__main__":
     print("Successfully connected to UPS.")
 
 
-    prod1 = AProduct(id = 1, description = "Tea", count = 10)
-    products = [prod1,]
+    #prod1 = AProduct(id = 1, description = "Tea", count = 10)
+    #products = [prod1,]
 
-    buymore(products, sock_WORLD)
-    pack(products, sock_WORLD)
+    #buymore(products, sock_WORLD)
+    #pack(products, sock_WORLD)
 
     #buy(products,sock_World)
 

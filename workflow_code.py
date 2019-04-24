@@ -92,7 +92,7 @@ if __name__ == '__main__':
 
     buymore(products, sockAMZ)
     pack(products, sockAMZ)
-    
+     
     '''
     APack
       required int32 whnum = 1;

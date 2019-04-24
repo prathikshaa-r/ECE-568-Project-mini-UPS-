@@ -65,29 +65,7 @@ def test_new(sock,isAmazon,creation, newStuff):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
     WORLD_PORT = WORLD_AMZ_PORT if isAmazon else WORLD_UPS_PORT
     sock.connect((WORLD_HOST, WORLD_PORT))
-    
-    communication.sendallMod(ENCODED_MESSAGE,sock)
-    encoded_response = communication.recvMod(sock)
-    conn_resp = AConnected() if isAmazon else UConnected()
-    conn_resp.ParseFromString(encoded_response)
-    print("REQUEST :\n {} \n\nRESPONSE\n : {}\n\n".format(conn_req.__str__(),conn_resp.__str__()))
-    return
 
-def test_burak(sock,isAmazon,creation, newStuff):
-    conn_req = AConnect() if isAmazon else UConnect()
-    conn_req.isAmazon = isAmazon
-    if not creation:
-        conn_req.worldid = 2 # config file
-    if newStuff and not isAmazon:
-        init_trucks(conn_req)
-    if newStuff and isAmazon:
-        conn_req.initwh.extend([AInitWarehouse(id = 1, x = 1, y = 1),])
-    ENCODED_MESSAGE = conn_req.SerializeToString()
-
-    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
-    WORLD_PORT = WORLD_AMZ_PORT if isAmazon else WORLD_UPS_PORT
-    sock.connect((WORLD_HOST, WORLD_PORT))
-    
     communication.sendallMod(ENCODED_MESSAGE,sock)
     encoded_response = communication.recvMod(sock)
     conn_resp = AConnected() if isAmazon else UConnected()
@@ -105,6 +83,11 @@ def wait_aconnect(sock):
 ##
 def selector(inputs, outputs, message_queues):
     while inputs:
+#        if time.time() .... : Some time condition, spawn a new thread for each of below
+#            refresh_truck_handler(sock,seqnum)
+#            resend_unacked_world_handler(sock)
+#            resend_unacked_amazon_handler(socK
+
         readable,writable,exceptional = select.select(inputs,outputs,message_queues)
         for s in readable:
             if s is sock_WORLD:
@@ -190,15 +173,18 @@ def truck_status_handler(trucks):
     print("Thanks for the truck status. I'll be sure to ack you all!")
     world_acks=[]
     for truck in trucks:
+        world_acks.append(truck.seqnum)
+        if not idem_check_world(truck.seqnum):
+            continue
         print(truck)
         change_truck_stat_withXY(truck.truckid, truck.status, truck.x, truck.y)
+        init_incomingseqworld(truck.seqnum)
+
         # update to db
         # truck.truckid
         # truck.status
         # truck.x
         # truck.y
-        
-        world_acks.append(truck.seqnum)
         pass
     world_send_acks(world_acks)
     return
@@ -207,6 +193,10 @@ def completions_handler(completions):
     print("Thanks for reaching warehouse, will notify amazon now. Also, acks to you.")
     world_acks = []
     for readyTruck in completions:
+        world_acks.append(readyTruck.seqnum)
+        if not idem_check_world(readyTruck.seqnum):
+            continue
+        
         print(readyTruck)
         # Truck to amazon
         with amazon_seq_lock:
@@ -225,15 +215,13 @@ def completions_handler(completions):
 
         db_lookup_w_id = find_warehouse(readyTruck.x, readyTruck.y)
         
-        world_acks.append(readyTruck.seqnum)
-        with amazon_seq_lock:
-            seq_num = ++amazon_seq_num
-            pass
-        
         truck = Truck(whid = db_lookup_w_id, truckid = readyTruck.truckid, packageid = db_lookup_p_id, seqnum = seq_num)
+        
         send = UACommands(arrived = [truck,])
         # encode and send to amazon
-        encoded_msg = "THIS NEEDS TO BE CHANGED"
+        encoded_msg = send.SerializeToString()
+        communication.sendallMod(encoded_msg,sock_AMZ) 
+        
         init_outgoingsequa(seq_num,encoded_msg)
         # save seq_num and above encoded msg to outgoing amazon seq db
         pass
@@ -246,6 +234,10 @@ def delivered_handler(deliveries_made):
     print("Thanks for completing delivery, will notify amazon now. Also, acks to you")
     # Delivered to amazon
     for delivered in deliveries_made:
+        world_acks.append(delivered.seqnum)
+        if not idem_check_world(delivered.seqnum):
+            continue
+
         print(delivered)
         
         # delivered.truckid -- update truck db?
@@ -253,16 +245,17 @@ def delivered_handler(deliveries_made):
             seq_num = ++amazon_seq_lock
             pass
         delivered_msg = Delivered(packageid = delivered.packageid, seqnum = seq_num)
+        
         send = UACommands(finish=[delivered_msg,])
-
+        encoded_msg = send.SerializeToString()
+        communication.sendallMod(encoded_msg,sock_AMZ)
+        
         # encode delivered_msg and send to amazon
 
         # save seq_num and encoded msg to outgoing amazon seq db
 
-        encoded_msg = "THIS NEEDS TO BE CHANGED"
-        init_outgoingseqworld(seq_num,encoded_msg)
+        init_outgoingsequa(seq_num,encoded_msg)
 
-        world_acks.append(delivered.seqnum)
         pass
     world_send_acks(world_acks)
         
@@ -270,7 +263,9 @@ def delivered_handler(deliveries_made):
 
 def world_send_acks(world_acks):
     send = UCommands(acks = world_acks)
-    # encode and send acks to world
+    encoded_msg = send.SerializeToString()
+    communication.sendallMod(encoded_msg,sock_WORLD) #JOJO
+
     return
 
 def world_acks_handler(acks):
@@ -290,6 +285,10 @@ def pickup_handler(orders):
     print("Ack the request and make a UGoPickup to world")
     amazon_acks = []
     for order in orders:
+        amazon_acks.append(order.seqnum)
+        if not idem_check_amazon(order.seqnum):
+            continue
+
         print(order)
         
         # order.whid
@@ -299,19 +298,30 @@ def pickup_handler(orders):
 
         # order.packageid
         # order.upsusername
+
+
+        # ADD PRODUCTS LATER FOR NOW JUST ADDING THE PACKAGE 
         # products = order.item
         # products.id
         # products.description
         # products.amount
+
+        
+        #find a truck (optimized or not)
 
         with world_seq_lock:
             seq_num = ++world_seq_num
             pass
         send_pickup = UGoPickup(truckid = db_lookup_t_id, whid = order.whid, seqnum = seq_num)
         send = UCommands(pickups = [send_pickup,])
-        # insert seq_num into db outgoing world seq
+
+        encoded_msg = send.SerializeToString()
+        communication.sendallMod(encoded_msg,sock_WORLD) 
         
-        amazon_acks.append(order.seqnum)
+        # insert seq_num into db outgoing world seq
+        init_outgoingseqworld(seq_num,encoded_msg)
+        
+
         pass
     amazon_send_acks(amazon_acks)
         
@@ -321,9 +331,20 @@ def delivery_handler(deliveries):
     print("Ack the request and make a UGoDeliver to world")
     amazon_acks = []
     for delivery in deliveries:
+        amazon_acks.append(delivery.seqnum)
+        if not idem_check_amazon(delivery.seqnum):
+            continue
+
         print(delivery)
         
-        # lookup lcoation in db and send truck to deliver
+        # lookup loation in db and send truck to deliver
+
+        pack_object = find_package(delivery.packageid)
+        db_lookup_x = pack_object.x
+        db_lookup_y = pack_object.y
+        db_lookup_t_id = pack_object.truck # pack_object.truck.id???
+
+        
         package = UDeliveryLocation(packageid = delivery.packageid, x = db_lookup_x, y = db_lookup_y)
         with world_seq_lock:
             seq_num = ++world_seq_num
@@ -331,9 +352,13 @@ def delivery_handler(deliveries):
         
         send_delivery = UGoDeliver(truckid = db_lookup_t_id, packages = [package,], seqnum = seq_num)
         send = UCommands(deliveries = [send_delivery,])
+        encoded_msg = send.SerializeToString()
+        communication.sendallMod(encoded_msg,sock_WORLD)
+        
         # insert seq_num and msg into db outgoing world seq
+        init_outgoingseqworld(seq_num,encoded_msg)
 
-        amazon_acks.append(delivery.seqnum)
+
         pass
     amazon_send_acks(amazon_acks)
         
@@ -344,17 +369,25 @@ def warehouse_info_handler(warehouses):
     acks = []
     for warehouse in warehouses:
         acks.append(warehouse.seqnum)
+        if not idem_check_amazon(warehouse.seqnum):
+            continue
+        
+        #init warehouse or update
+        init_or_up_warehouse(warehouse.id, warehouse.x, warehouse.y)
         pass
     return
 
 def amazon_send_acks(amazon_acks):
     send = UACommands(acks = amazon_acks)
-    # encode and send acks to world
+    # encode and send acks to AMZ
+    encoded_msg = send.SerializeToString()
+    communication.sendallMod(encoded_msg,sock_AMZ) 
     return
 
 def amazon_acks_handler(acks):
     print("Thanks for the acks, will stop sending you the message by updating db")
     # check if ack already updated in db, if not, update
     for ack in acks:
+        change_outgoingsequa(ack)
         print(ack)
     return

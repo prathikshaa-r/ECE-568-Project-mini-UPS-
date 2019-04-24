@@ -16,6 +16,20 @@ def init_warehouse(wh_id,wh_x,wh_y):
         session.add(new_wh)
         session.commit()
 
+def init_or_up_warehouse(wh_id,wh_x,wh_y):
+    wh_list = session.query(Warehouse).filter(Warehouse.w_id == wh_id)
+    if wh_list.count():
+        wh = wh_list.first()
+        wh.x = wh_x
+        wh.y = wh_y
+        session.commit()
+    else:
+        new_wh = Warehouse(w_id = wh_id, x = wh_x, y = wh_y)
+        session.add(new_wh)
+        session.commit()
+
+        
+        
 def find_warehouse(wh_x,wh_y):
     wh = session.query(Warehouse).filter(Warehouse.x == wh_x).filter(Warehouse.y == wh_y).first()
     wh_id = wh.w_id
@@ -29,6 +43,7 @@ def init_truck(tr_id,tr_x,tr_y,tr_st):
         new_tr = Truck(truck_id = tr_id, x = tr_x, y = tr_y, status = tr_st)
         session.add(new_tr)
         session.commit()
+
 def init_package(pkg_id, pkg_tr):
     if session.query(Package).filter(Package.packageid == pkg_id).count() != 0:
         raise ValueError("Duplicate Package ID")
@@ -37,6 +52,13 @@ def init_package(pkg_id, pkg_tr):
         new_pkg = Package(packageid = pkg_id, truck = pkg_tr)
         session.add(new_pkg)
         session.commit()
+
+def find_package(pkg_id):
+    pack_list = session.query(Package).filter(Package.packageid == pkg_id)
+    if pack_list:
+        return pack_list.first()
+        
+        
 def init_incomingseqworld(seq_num):
     if session.query(IncomingSeqWorld).filter(IncomingSeqWorld.sequence_number == seq_num).count() != 0:
         raise ValueError("Duplicate Incoming Seq")
@@ -71,14 +93,14 @@ def init_outgoingsequa(seq_num, enc_msg):
         
 def idem_check_world(seq_num):
     if session.query(IncomingSeqWorld)\
-                     .filter(IncomingSeqWorld.sequence_number == seq_num).count() !=0:
+              .filter(IncomingSeqWorld.sequence_number == seq_num).count() == 0:
         return True
     else:
         return False
     
 def idem_check_amazon(seq_num):
     if session.query(IncomingSeqUA)\
-                     .filter(IncomingSeqUA.sequence_number == seq_num).count() !=0:
+                     .filter(IncomingSeqUA.sequence_number == seq_num).count() ==0:
         return True
     else:
         return False
