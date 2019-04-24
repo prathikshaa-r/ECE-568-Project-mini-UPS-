@@ -15,11 +15,11 @@ def init_warehouse(wh_id,wh_x,wh_y):
         new_wh = Warehouse(w_id = wh_id, x = wh_x, y = wh_y)
         session.add(new_wh)
         session.commit()
-def init_truck(tr_id, tr_st):
+def init_truck(tr_id,tr_x,tr_y,tr_st):
     if session.query(Truck).filter(Truck.truck_id == tr_id).count() != 0:
         raise ValueError("Duplicate Truck")
     else:
-        new_tr = Truck(truck_id = tr_id, status = tr_st)
+        new_tr = Truck(truck_id = tr_id, x = tr_x, y = tr_y, status = tr_st)
         session.add(new_tr)
         session.commit()
 def init_package(pkg_id, pkg_tr):
@@ -76,5 +76,7 @@ def idem_check_amazon(seq_num):
     else:
         return False
     
-    
-                
+def change_truck_stat(tr_id,new_status):
+    truck = session.query(Truck).filter(Truck.truck_id == tr_id).first()
+    truck.status = new_status
+    session.commit()
