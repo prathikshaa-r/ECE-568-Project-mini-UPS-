@@ -39,7 +39,7 @@ def recvMod(socket):
         rsp_bytes = socket.recv(min(8096, msg_length))
         rsp_buffer.write(rsp_bytes)
         msg_length = msg_length - len(rsp_bytes)
-        return rsp_buffer.getvalue()
+    return rsp_buffer.getvalue()
 
             
 def sendallMod(mess,sock):

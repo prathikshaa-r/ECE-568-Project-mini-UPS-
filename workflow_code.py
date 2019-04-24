@@ -16,13 +16,14 @@ def test_new(sock,isAmazon,creation, newStuff):
     #pdb.set_trace()
     conn_req.isAmazon = isAmazon
     if not creation:
-        conn_req.worldid = 14
+        conn_req.worldid = 4
     if newStuff and not isAmazon:
         trucks = [InitializeTruck(x,0,0) for x in range(0,10)]
         trucks = [x.init_truck for x in trucks]
         conn_req.trucks.extend(trucks)
     if newStuff and isAmazon:
         x = 0
+        conn_req.initwh.extend([AInitWarehouse(id = 1, x = 1, y = 1),])
         #warehouses = [InitializeWarehouse(x,0,0) for x in range(0,10)]
         #warehouses = [x.init_warehouse for x in trucks]
         #conn_req.warehouses.extend(trucks)
@@ -46,16 +47,64 @@ def test_new(sock,isAmazon,creation, newStuff):
     return
 ## amazon to world
 
+def buymore(products, sock): # also take seqnum
+    #AMAZON SENDS UPS AN ORDER
+    conn_resp = AResponses()
+    purchaseMore = APurchaseMore(whnum = 1, things = products, seqnum=100)
+
+    buy = ACommands(buy = [purchaseMore,])
+    #pdb.set_trace()
+    ENCODED_MESSAGE = buy.SerializeToString()
+    communication.sendallMod(ENCODED_MESSAGE,sock)
     
+    encoded_response = communication.recvMod(sock)
+    conn_resp.ParseFromString(encoded_response)
+    print("REQUEST :\n {} \n\nRESPONSE\n : {}\n\n".format(buy.__str__(),conn_resp.__str__()))
+    return
+
+
+def pack(products, sock):  # also take seqnum
+    conn_resp = AResponses()
+
+    pack = APack(whnum = 1, things = products, shipid = 1, seqnum=102)
+    
+    packcommand = ACommands(topack = [pack,])
+    ENCODED_MESSAGE = packcommand.SerializeToString()
+    communication.sendallMod(ENCODED_MESSAGE,sock)
+    
+    encoded_response = communication.recvMod(sock)
+    conn_resp.ParseFromString(encoded_response)
+    print("REQUEST :\n {} \n\nRESPONSE\n : {}\n\n".format(packcommand.__str__(),conn_resp.__str__()))
+    
+
 
 ######################################################################################################
 
 if __name__ == '__main__':
+    #UPS AND AMZ CONNECT TO WORLD
     sockUPS = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sockAMZ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     test_new(sockUPS, isAmazon = False, creation=False,newStuff=False)
-    test_new(sockAMZ, isAmazon = True, creation=False,newStuff= True)
+    test_new(sockAMZ, isAmazon = True, creation=False,newStuff= False)
 
+    prod1 = AProduct(id = 1, description = "Tea", count = 10)
+    products = [prod1,]
+
+    buymore(products, sockAMZ)
+    pack(products, sockAMZ)
+    
+    '''
+    APack
+      required int32 whnum = 1;
+      repeated AProduct things = 2;
+      required int64 shipid = 3;
+      required int64 seqnum = 4;
+    AProduct
+      required int64 id = 1;
+      required string description = 2;
+      required int32 count = 3;
+'''    
+    
 '''UPS connects to world
        UConnect()
        UInitTruck() list
