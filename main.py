@@ -76,19 +76,23 @@ def selector(inputs, outputs, message_queues):
                 print(resp)
 
                 if len(resp.truckstatus) > 0:
-                    truck_status_handler(resp.truckstatus)
+                    t1=threading.Thread(target=truck_status_handler(resp.truckstatus))
+                    t1.start()
                     pass
                 if len(resp.completions) > 0:
                     print("deal with completions")
-                    completions_handler(resp.completions)
+                    t2=threading.Thread(target=completions_handler(resp.completions))
+                    t2.start()
                     pass
                 if len(resp.delivered) > 0:
                     print("deal with deliveries")
-                    delivered_handler(resp.delivered)
+                    t3=threading.Thread(target=delivered_handler(resp.delivered))
+                    t3.start()
                     pass
                 if len(resp.acks) > 0:
                     print("deal with acks")
-                    world_acks_handler(resp.acks)
+                    t4=threading.Thread(target=world_acks_handler(resp.acks))
+                    t4.start()
                 pass
             
             elif s is sock_AMZ:
@@ -100,18 +104,22 @@ def selector(inputs, outputs, message_queues):
 
                 if len(resp.order) > 0:
                     orders = resp.order
-                    pickup_handler(orders)
+                    t5=threading.Thread(target=pickup_handler(orders))
+                    t5.start()
                     pass
                 if len(resp.todeliver) > 0:
                     deliveries = resp.todeliver
-                    delivery_handler(deliveries)
+                    t6=threading.Thread(target=delivery_handler(deliveries))
+                    t6.start()
                     pass
                 if len(resp.whinfo) > 0:
                     warehouses = resp.whinfo
-                    warehouse_info_handler(warehouses)
+                    t7=threading.Thread(target=warehouse_info_handler(warehouses))
+                    t7.start()
                     pass
                 if len(acks) > 0:
-                    amazon_acks_handler(acks)
+                    t8=threading.Thread(target=amazon_acks_handler(acks))
+                    t8.start()
                     pass
                 pass
             pass
@@ -143,7 +151,7 @@ if __name__ == "__main__":
 # todo: Burak
 def truck_status_handler(trucks):
     print("Thanks for the truck status. I'll be sure to ack you all!")
-    acks=[]
+    world_acks=[]
     for truck in trucks:
         print(truck)
 
@@ -153,7 +161,9 @@ def truck_status_handler(trucks):
         # truck.x
         # truck.y
         
-        acks.append(truck.seqnum)
+        world_acks.append(truck.seqnum)
+        pass
+    world_send_acks(world_acks)
     return
 
 def completions_handler(completions):
@@ -174,10 +184,14 @@ def completions_handler(completions):
         # readyTruck.status -- ? why
 
         world_acks.append(readyTruck.seqnum)
+        with amazon_seq_lock:
+            seq_num = ++amazon_seq_num
+            pass
         
-        truck = Truck(whid = db_lookup_w_id, truckid = readyTruck.truckid, packageid = db_lookup_p_id, seqnum = amazon_seq_num)
-        # encode truck and send to amazon
-        # save amazon_seq_num and above encoded msg to outgoing amazon seq db
+        truck = Truck(whid = db_lookup_w_id, truckid = readyTruck.truckid, packageid = db_lookup_p_id, seqnum = seq_num)
+        send = UACommands(arrived = [truck,])
+        # encode and send to amazon
+        # save seq_num and above encoded msg to outgoing amazon seq db
         pass
     world_send_acks(world_acks)
 
@@ -195,6 +209,7 @@ def delivered_handler(deliveries_made):
             seq_num = ++amazon_seq_lock
             pass
         delivered_msg = Delivered(packageid = delivered.packageid, seqnum = seq_num)
+        send = UACommands(finish=[delivered_msg,])
         # encode delivered_msg and send to amazon
         # save seq_num and encoded msg to outgoing amazon seq db
         
@@ -216,7 +231,7 @@ def world_acks_handler(acks):
         print(ack)
     return
 
-def finished_handler:
+def finished_handler():
     print("I don't know when the world send a finished. Check and deal with it.")
     return
 
@@ -227,18 +242,25 @@ def pickup_handler(orders):
     for order in orders:
         print(order)
 
-        order.whid
-        # todo: @David delivery addr or package -- save to db
-        order.x
-        order.y
+        # order.whid
+        # # todo: @David delivery addr or package -- save to db
+        # order.x
+        # order.y
 
-        order.packageid
-        order.upsusername
-        products = order.item
-        products.id
-        products.description
-        products.amount
+        # order.packageid
+        # order.upsusername
+        # products = order.item
+        # products.id
+        # products.description
+        # products.amount
 
+        with world_seq_lock:
+            seq_num = ++world_seq_num
+            pass
+        send_pickup = UGoPickup(truckid = db_lookup_t_id, whid = order.whid, seqnum = seq_num)
+        send = UCommands(pickups = [send_pickup,])
+        # insert seq_num into db outgoing world seq
+        
         amazon_acks.append(order.seqnum)
         pass
     amazon_send_acks(amazon_acks)
@@ -247,6 +269,24 @@ def pickup_handler(orders):
 
 def delivery_handler(deliveries):
     print("Ack the request and make a UGoDeliver to world")
+    amazon_acks = []
+    for delivery in deliveries:
+        print(delivery)
+        
+        # lookup lcoation in db and send truck to deliver
+        package = UDeliveryLocation(packageid = delivery.packageid, x = db_lookup_x, y = db_lookup_y)
+        with world_seq_lock:
+            seq_num = ++world_seq_num
+            pass
+        
+        send_delivery = UGoDeliver(truckid = db_lookup_t_id, packages = [package,], seqnum = seq_num)
+        send = UCommands(deliveries = [send_delivery,])
+        # insert seq_num and msg into db outgoing world seq
+
+        amazon_acks.append(delivery.seqnum)
+        pass
+    amazon_send_acks(amazon_acks)
+        
     return
 
 def warehouse_info_handler(warehouses):
@@ -258,7 +298,7 @@ def warehouse_info_handler(warehouses):
     return
 
 def amazon_send_acks(amazon_acks):
-    send = UCommands(acks = amazon_acks)
+    send = UACommands(acks = amazon_acks)
     # encode and send acks to world
     return
 
