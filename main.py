@@ -207,6 +207,7 @@ def delivered_handler(deliveries_made):
 def world_send_acks(world_acks):
     send = UCommands(acks = world_acks)
     # encode and send acks to world
+    return
 
 def world_acks_handler(acks):
     print("Thanks for the acks, will stop sending you the message by updating db")
@@ -254,6 +255,11 @@ def warehouse_info_handler(warehouses):
     for warehouse in warehouses:
         acks.append(warehouse.seqnum)
         pass
+    return
+
+def amazon_send_acks(amazon_acks):
+    send = UCommands(acks = amazon_acks)
+    # encode and send acks to world
     return
 
 def amazon_acks_handler(acks):
