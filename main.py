@@ -1,5 +1,9 @@
 from __future__ import with_statement
 
+from connect_db import *
+from connect_db import session as s
+from update_db import *
+
 from google.protobuf.internal.decoder import _DecodeVarint32
 from google.protobuf.internal.encoder import _EncodeVarint
 
@@ -30,15 +34,50 @@ amazon_seq_lock = threading.Lock()
 
 # todo: Burak
 # no seqnum required
-def init_trucks(conn_req):
-    conn_req.trucks.extend([UInitTruck(id = 1, x = 1, y = 1),])
+def initTrucks(conn_req):
+    for i in range(1,10):
+        #add a truck to the database
+        init_truck(i,i,i)
+        #extend the connection request to have multiple trucks
+        conn_req.trucks.extend([UInitTruck(id = i, x = i, y = i),])
+    return
+
+def initWarehouses(conn_req):
+    for i in range(1,10):
+        #add a truck to the database
+        init_warehouse(i,i,i)
+        #extend the connection request to have multiple trucks
+        conn_req.trucks.extend([AInitWarehouse(id = i, x = i, y = i),])
     return
 
 def test_new(sock,isAmazon,creation, newStuff):
     conn_req = AConnect() if isAmazon else UConnect()
     conn_req.isAmazon = isAmazon
     if not creation:
-        conn_req.worldid = 4 # config file
+        conn_req.worldid = 1 # config file
+    if newStuff and not isAmazon:
+        initTrucks(conn_req)
+    if newStuff and isAmazon:
+        initWarehouses(conn_req)
+        #conn_req.initwh.extend([AInitWarehouse(id = 1, x = 1, y = 1),])
+    ENCODED_MESSAGE = conn_req.SerializeToString()
+
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,1)
+    WORLD_PORT = WORLD_AMZ_PORT if isAmazon else WORLD_UPS_PORT
+    sock.connect((WORLD_HOST, WORLD_PORT))
+    
+    communication.sendallMod(ENCODED_MESSAGE,sock)
+    encoded_response = communication.recvMod(sock)
+    conn_resp = AConnected() if isAmazon else UConnected()
+    conn_resp.ParseFromString(encoded_response)
+    print("REQUEST :\n {} \n\nRESPONSE\n : {}\n\n".format(conn_req.__str__(),conn_resp.__str__()))
+    return
+
+def test_burak(sock,isAmazon,creation, newStuff):
+    conn_req = AConnect() if isAmazon else UConnect()
+    conn_req.isAmazon = isAmazon
+    if not creation:
+        conn_req.worldid = 2 # config file
     if newStuff and not isAmazon:
         init_trucks(conn_req)
     if newStuff and isAmazon:
@@ -74,7 +113,6 @@ def selector(inputs, outputs, message_queues):
                 resp = UResponses()
                 resp.ParseFromString(encoded_response)
                 print(resp)
-
                 if len(resp.truckstatus) > 0:
                     t1=threading.Thread(target=truck_status_handler(resp.truckstatus))
                     t1.start()
@@ -101,7 +139,6 @@ def selector(inputs, outputs, message_queues):
                 resp = AUCommands()
                 resp.ParseFromString(encoded_response)
                 print(resp)
-
                 if len(resp.order) > 0:
                     orders = resp.order
                     t5=threading.Thread(target=pickup_handler(orders))
@@ -129,7 +166,7 @@ def selector(inputs, outputs, message_queues):
 
 if __name__ == "__main__":
     sock_WORLD = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    test_new(sock_WORLD, isAmazon = False, creation=False,newStuff=False)
+    test_new(sock_WORLD, isAmazon = False, creation=False,newStuff=True)
 
     # Uncomment these to activate amazon
     sock_AMZ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -154,7 +191,7 @@ def truck_status_handler(trucks):
     world_acks=[]
     for truck in trucks:
         print(truck)
-
+        change_truck_stat_withXY(truck.truckid, truck.status, truck.x, truck.y)
         # update to db
         # truck.truckid
         # truck.status
@@ -175,6 +212,7 @@ def completions_handler(completions):
         with amazon_seq_lock:
             seq_num = ++amazon_seq_num
             pass
+
         
         # readyTruck.truckid
         # # use these to lookup warehouse id from warehouse db
@@ -183,6 +221,10 @@ def completions_handler(completions):
 
         # readyTruck.status -- ? why
 
+        #FINDING THE WAREHOUSE ID FROM X AND Y COORDS
+
+        db_lookup_w_id = find_warehouse(readyTruck.x, readyTruck.y)
+        
         world_acks.append(readyTruck.seqnum)
         with amazon_seq_lock:
             seq_num = ++amazon_seq_num
@@ -191,6 +233,8 @@ def completions_handler(completions):
         truck = Truck(whid = db_lookup_w_id, truckid = readyTruck.truckid, packageid = db_lookup_p_id, seqnum = seq_num)
         send = UACommands(arrived = [truck,])
         # encode and send to amazon
+        encoded_msg = "THIS NEEDS TO BE CHANGED"
+        init_outgoingsequa(seq_num,encoded_msg)
         # save seq_num and above encoded msg to outgoing amazon seq db
         pass
     world_send_acks(world_acks)
@@ -210,9 +254,14 @@ def delivered_handler(deliveries_made):
             pass
         delivered_msg = Delivered(packageid = delivered.packageid, seqnum = seq_num)
         send = UACommands(finish=[delivered_msg,])
+
         # encode delivered_msg and send to amazon
+
         # save seq_num and encoded msg to outgoing amazon seq db
-        
+
+        encoded_msg = "THIS NEEDS TO BE CHANGED"
+        init_outgoingseqworld(seq_num,encoded_msg)
+
         world_acks.append(delivered.seqnum)
         pass
     world_send_acks(world_acks)
@@ -228,6 +277,7 @@ def world_acks_handler(acks):
     print("Thanks for the acks, will stop sending you the message by updating db")
     # check if ack already updated in db, if not, update
     for ack in acks:
+        change_outgoingseqworld(ack)
         print(ack)
     return
 
@@ -241,7 +291,7 @@ def pickup_handler(orders):
     amazon_acks = []
     for order in orders:
         print(order)
-
+        
         # order.whid
         # # todo: @David delivery addr or package -- save to db
         # order.x

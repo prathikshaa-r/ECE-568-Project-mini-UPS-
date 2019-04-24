@@ -15,6 +15,13 @@ def init_warehouse(wh_id,wh_x,wh_y):
         new_wh = Warehouse(w_id = wh_id, x = wh_x, y = wh_y)
         session.add(new_wh)
         session.commit()
+
+def find_warehouse(wh_x,wh_y):
+    wh = session.query(Warehouse).filter(Warehouse.x == wh_x).filter(Warehouse.y == wh_y).first()
+    wh_id = wh.w_id
+    return wh_id
+
+        
 def init_truck(tr_id,tr_x,tr_y,tr_st):
     if session.query(Truck).filter(Truck.truck_id == tr_id).count() != 0:
         raise ValueError("Duplicate Truck")
@@ -38,11 +45,11 @@ def init_incomingseqworld(seq_num):
         session.add(new_seq)
         session.commit()
         
-def init_outgoingseqworld(seq_num):
+def init_outgoingseqworld(seq_num, enc_msg):
     if session.query(OutgoingSeqWorld).filter(OutgoingSeqWorld.sequence_number == seq_num).count() != 0:
         raise ValueError("Duplicate Outgoing Seq")
     else:
-        new_seq = OutgoingSeqWorld(sequence_number = seq_num, acked = False)
+        new_seq = OutgoingSeqWorld(sequence_number = seq_num, acked = False, message = enc_msg)
         session.add(new_seq)
         session.commit()
         
@@ -54,11 +61,11 @@ def init_incomingsequa(seq_num):
         session.add(new_seq)
         session.commit()
         
-def init_outgoingsequa(seq_num):
+def init_outgoingsequa(seq_num, enc_msg):
     if session.query(OutgoingSeqUA).filter(OutgoingSeqUA.sequence_number == seq_num).count() != 0:
         raise ValueError("Duplicate Outgoing UA")
     else:
-        new_seq = OutgoingSeqUA(sequence_number = seq_num, acked = False)
+        new_seq = OutgoingSeqUA(sequence_number = seq_num, acked = False, message = enc_msg)
         session.add(new_seq)
         session.commit()
         
@@ -78,5 +85,36 @@ def idem_check_amazon(seq_num):
     
 def change_truck_stat(tr_id,new_status):
     truck = session.query(Truck).filter(Truck.truck_id == tr_id).first()
-    truck.status = new_status
-    session.commit()
+    if truck:
+        truck.status = new_status
+        session.commit()
+    else:
+        raise(ValueError("Truck Doesn't Exist"))
+
+def change_truck_stat_withXY(tr_id,status, x, y):
+    truck = session.query(Truck).filter(Truck.truck_id == tr_id).first()
+    if truck:
+        truck.status = status
+        truck.x = x
+        truck.y = y
+        session.commit()
+    else:
+        raise(ValueError("Truck Doesn't Exist"))
+
+def change_outgoingsequa(seq_num):
+    seq = session.query(OutgoingSeqUA).filter(OutgoingSeqUA.sequence_number == seq_num).first()
+    if seq:
+        seq.acked = True
+        session.commit()
+    else:
+        raise(ValueError("Seq Doesn't Exist"))
+
+
+def change_outgoingseqworld(seq_num):
+    seq = session.query(OutgoingSeqWorld).filter(OutgoingSeqWorld.sequence_number == seq_num).first()
+    if seq:
+        seq.acked = True
+        session.commit()
+    else:
+        raise(ValueError("Seq Doesn't Exist"))
+
