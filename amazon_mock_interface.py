@@ -164,6 +164,16 @@ def disconnect_world(command):
 
 
 
+class InitializeWarehouse:
+    def __init__(self,t_id,x,y):
+        self.init_warehouse = UInitWarehouse()
+        self.init_warehouse.id = t_id
+        self.init_warehouse.x = x
+        self.init_warehouse.y = y
+        self.type = 'uInitWarehouse'
+        return self.init_warehouse
+    pass
+
 
 class AmazonProducts:
     def __init__(self, prod_id, desc, amt):
