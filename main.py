@@ -27,6 +27,8 @@ WORLD_AMZ_PORT = 23456
 UPS_PORT = 34567
 
 # global sequence numbers
+global world_seq_num
+global amazon_seq_num
 world_seq_num = 1
 amazon_seq_num = 1
 
@@ -36,11 +38,28 @@ amazon_seq_lock = threading.Lock()
 
 global sock_WORLD
 global sock_AMZ
+#----------------------------refresh trucks logic----------------------------#
+def refresh_truck_handler(sock_WORLD):
+    global sock_WORLD
+    global world_seq_num
+    trucks_list = session.query(Truck).all()
+    for truck in trucks_list:
+        with world_seq_lock:
+            world_seq_num += 1
+            seq_num = world_seq_num
+            pass
+        query_truck = UCommands(queries = [UQuery(truckid = truck.truck_id, seqnum = seq_num),])
+        ENCODED_MESSAGE = query_truck.SerializeToString()
+        communication.sendallMod(ENCODED_MESSAGE,sock_WORLD)
+        init_outgoingseqworld(seq_num, ENCODED_MESSAGE)
 
+#----------------------------------------------------------------------------#
 
 # todo: Burak
 # no seqnum required
 def initTrucks(conn_req):
+    global world_seq_num
+    global amazon_seq_num
     for i in range(1,10):
         #add a truck to the database
         init_truck(i,i,i, "IDLE")
@@ -49,6 +68,8 @@ def initTrucks(conn_req):
     return
 
 def initWarehouses(conn_req):
+    global world_seq_num
+    global amazon_seq_num
     for i in range(1,10):
         #add a truck to the database
         init_warehouse(i,i,i)
@@ -101,6 +122,8 @@ def wait_aconnect(sock):
 def truck_status_handler(trucks):
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     print("Thanks for the truck status. I'll be sure to ack you all!")
     world_acks=[]
     for truck in trucks:
@@ -123,6 +146,8 @@ def truck_status_handler(trucks):
 def completions_handler(completions):
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     print("Thanks for reaching warehouse, will notify amazon now. Also, acks to you.")
     world_acks = []
     #pdb.set_trace()
@@ -134,7 +159,9 @@ def completions_handler(completions):
         print(readyTruck)
         # Truck to amazon
         with amazon_seq_lock:
-            seq_num = ++amazon_seq_num
+            amazon_seq_num += 1
+            seq_num = amazon_seq_num
+            print(seq_num)
             pass
 
         
@@ -170,6 +197,8 @@ def completions_handler(completions):
 def delivered_handler(deliveries_made):
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     world_acks = []
     print("Thanks for completing delivery, will notify amazon now. Also, acks to you")
     # Delivered to amazon
@@ -182,7 +211,8 @@ def delivered_handler(deliveries_made):
         
         # delivered.truckid -- update truck db?
         with amazon_seq_lock:
-            seq_num = ++amazon_seq_lock
+            amazon_seq_num += 1
+            seq_num = amazon_seq_num
             pass
         delivered_msg = Delivered(packageid = delivered.packageid, seqnum = seq_num)
         
@@ -204,6 +234,8 @@ def delivered_handler(deliveries_made):
 def world_send_acks(world_acks):
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     send = UCommands(acks = world_acks)
     encoded_msg = send.SerializeToString()
     communication.sendallMod(encoded_msg,sock_WORLD) #JOJO
@@ -213,6 +245,8 @@ def world_send_acks(world_acks):
 def world_acks_handler(acks):
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     print("Thanks for the acks, will stop sending you the message by updating db")
     # check if ack already updated in db, if not, update
     for ack in acks:
@@ -221,6 +255,8 @@ def world_acks_handler(acks):
     return
 
 def finished_handler():
+    global world_seq_num
+    global amazon_seq_num
     print("I don't know when the world send a finished. Check and deal with it.")
     return
 
@@ -228,6 +264,8 @@ def finished_handler():
 def pickup_handler(orders):
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     print("Ack the request and make a UGoPickup to world")
     amazon_acks = []
     for order in orders:
@@ -262,7 +300,8 @@ def pickup_handler(orders):
         
         
         with world_seq_lock:
-            seq_num = ++world_seq_num
+            world_seq_num += 1
+            seq_num = world_seq_num
             pass
 
         send_pickup = UGoPickup(truckid = db_lookup_t_id, whid = order.whid, seqnum = seq_num)
@@ -284,6 +323,8 @@ def pickup_handler(orders):
 def delivery_handler(deliveries):
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     print("Ack the request and make a UGoDeliver to world")
     amazon_acks = []
     for delivery in deliveries:
@@ -298,12 +339,13 @@ def delivery_handler(deliveries):
         pack_object = find_package(delivery.packageid)
         db_lookup_x = pack_object.x
         db_lookup_y = pack_object.y
-        db_lookup_t_id = pack_object.truck # pack_object.truck.id???
+        db_lookup_t_id = pack_object.truck_id # pack_object.truck.id???
 
         
         package = UDeliveryLocation(packageid = delivery.packageid, x = db_lookup_x, y = db_lookup_y)
         with world_seq_lock:
-            seq_num = ++world_seq_num
+            world_seq_num += 1
+            seq_num = world_seq_num
             pass
         
         send_delivery = UGoDeliver(truckid = db_lookup_t_id, packages = [package,], seqnum = seq_num)
@@ -324,6 +366,8 @@ def delivery_handler(deliveries):
 def warehouse_info_handler(warehouses):
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     print("Ack all! Save info in db")
     acks = []
     for warehouse in warehouses:
@@ -340,6 +384,8 @@ def warehouse_info_handler(warehouses):
 def amazon_send_acks(amazon_acks):
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     send = UACommands(acks = amazon_acks)
     print(send)
     # encode and send acks to AMZ
@@ -350,6 +396,8 @@ def amazon_send_acks(amazon_acks):
 def amazon_acks_handler(acks):
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     print("Thanks for the acks, will stop sending you the message by updating db")
     # check if ack already updated in db, if not, update
     for ack in acks:
@@ -357,13 +405,12 @@ def amazon_acks_handler(acks):
         print(ack)
     return
 
-
-
 def selector(inputs, outputs, message_queues):
     global sock_WORLD
     global sock_AMZ
-    # sock_WORLD = inputs[0]
-    # sock_AMZ = inputs[1]
+    global world_seq_num
+    global amazon_seq_num
+
     while inputs:
 #        if time.time() .... : Some time condition, spawn a new thread for each of below
 #            refresh_truck_handler(sock,seqnum)
@@ -420,7 +467,7 @@ def selector(inputs, outputs, message_queues):
                     t7.start()
                     pass
                 if len(resp.acks) > 0:
-                    t8=threading.Thread(target=amazon_acks_handler(acks))
+                    t8=threading.Thread(target=amazon_acks_handler(resp.acks))
                     t8.start()
                     pass
                 pass
@@ -430,10 +477,14 @@ def selector(inputs, outputs, message_queues):
 
 global sock_WORLD
 global sock_AMZ
+global world_seq_num
+global amazon_seq_num
 
 if __name__ == "__main__":
     global sock_WORLD
     global sock_AMZ
+    global world_seq_num
+    global amazon_seq_num
     sock_WORLD = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     test_new(sock_WORLD, isAmazon = False, creation=True,newStuff=True)
 

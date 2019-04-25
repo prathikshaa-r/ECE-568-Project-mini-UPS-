@@ -19,14 +19,20 @@ class Package(models.Model):
     warehouse =  models.ForeignKey(Warehouse, on_delete = models.CASCADE,null=True,blank=True,related_name = "package_set")
     x = models.IntegerField(null = True, blank = True)
     y = models.IntegerField(null = True, blank = True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,related_name = "package_set")
+    def __str__(self):
+        temp = "<b>packageid : {} | location : (x : {}, y : {}) | status: {}</b><br>".format(self.packageid,
+                                                                               self.x, self.y, self.truck.status)
+        temp += "<br>".join([p.__str__() for p in self.product_set.order_by('productid')])
+        return temp
     
 class Product(models.Model):
     productid = models.IntegerField()
     description =  models.CharField(max_length=10000,default="",null=True, blank=True)
     amount = models.IntegerField()
     package =  models.ForeignKey(Package, on_delete = models.CASCADE,null=True,blank=True,related_name = "product_set")
-
+    def __str__(self):
+        return "productid : {} | description : {} | amount : {}".format(self.productid, self.description, self.amount)
     
 class IncomingSeqWorld(models.Model):
     sequence_number = models.IntegerField(primary_key = True)
