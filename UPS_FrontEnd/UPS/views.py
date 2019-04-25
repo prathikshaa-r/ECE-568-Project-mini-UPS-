@@ -8,7 +8,8 @@ from django.shortcuts import render
 def index(request):
         trucks = Truck.objects.order_by("truck_id")
         package_set = lambda truck : str([p.packageid for p in truck.package_set.all()])
-        output = '<br>'.join(["truck_id : {} | status : {} | packages : {}".format(t.truck_id,t.status,package_set(t)) for t in trucks])
+        output = request.user.username + '<br>'
+        output += '<br>'.join(["truck_id : {} | status : {} | packages : {}".format(t.truck_id,t.status,package_set(t)) for t in trucks])
         return render(request, 'home.html',{'output' : output})
         return HttpResponse(output)
 

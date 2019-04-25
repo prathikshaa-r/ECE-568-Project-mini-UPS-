@@ -7,8 +7,11 @@ from sqlalchemy.orm import sessionmaker
 Base = automap_base()
 engine = create_engine('postgresql://postgres:abc123@127.0.0.1/testdb')
 Base.prepare(engine,reflect = True)
+
 session = Session(engine)
 Truck = Base.classes.UPS_truck
+Product = Base.classes.UPS_product
+User = Base.classes.auth_user
 Warehouse = Base.classes.UPS_warehouse
 Package = Base.classes.UPS_package
 IncomingSeqWorld = Base.classes.UPS_incomingseqworld

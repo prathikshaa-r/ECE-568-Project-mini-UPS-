@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 # Create your models here.
 class Warehouse(models.Model):
@@ -15,7 +16,17 @@ class Truck(models.Model):
 class Package(models.Model):
     packageid = models.IntegerField(primary_key=True)
     truck = models.ForeignKey(Truck, on_delete = models.CASCADE,null=True,blank=True,related_name = "package_set")
-    warehouse =  models.ForeignKey(Warehouse, on_delete = models.CASCADE,null=True,blank=True,related_name = "package_set") 
+    warehouse =  models.ForeignKey(Warehouse, on_delete = models.CASCADE,null=True,blank=True,related_name = "package_set")
+    x = models.IntegerField(null = True, blank = True)
+    y = models.IntegerField(null = True, blank = True)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+class Product(models.Model):
+    productid = models.IntegerField()
+    description =  models.CharField(max_length=10000,default="",null=True, blank=True)
+    amount = models.IntegerField()
+    package =  models.ForeignKey(Package, on_delete = models.CASCADE,null=True,blank=True,related_name = "product_set")
+
     
 class IncomingSeqWorld(models.Model):
     sequence_number = models.IntegerField(primary_key = True)

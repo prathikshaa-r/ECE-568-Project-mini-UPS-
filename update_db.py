@@ -29,8 +29,9 @@ def init_or_up_warehouse(wh_id,wh_x,wh_y):
         session.commit()
 
         
-        
+import pdb
 def find_warehouse(wh_x,wh_y):
+#    pdb.set_trace()
     wh = session.query(Warehouse).filter(Warehouse.x == wh_x).filter(Warehouse.y == wh_y).first()
     wh_id = wh.w_id
     return wh_id
@@ -38,18 +39,22 @@ def find_warehouse(wh_x,wh_y):
         
 def init_truck(tr_id,tr_x,tr_y,tr_st):
     if session.query(Truck).filter(Truck.truck_id == tr_id).count() != 0:
-        raise ValueError("Duplicate Truck")
+        x = 5
+        #raise ValueError("Duplicate Truck")
     else:
         new_tr = Truck(truck_id = tr_id, x = tr_x, y = tr_y, status = tr_st)
         session.add(new_tr)
         session.commit()
 
-def init_package(pkg_id, pkg_tr):
+def init_package(pkg_id, pkg_tr, pkg_wh, username, x, y):
     if session.query(Package).filter(Package.packageid == pkg_id).count() != 0:
         raise ValueError("Duplicate Package ID")
     else:
         #This part isn't working, 'truck=pkg_tr'
-        new_pkg = Package(packageid = pkg_id, truck = pkg_tr)
+        #user = session.query(User).filter(User.username == username).first()
+        user_id = 1#user.id
+        new_pkg = Package(packageid = pkg_id, truck_id = pkg_tr,
+                          warehouse_id = pkg_wh, user_id = user_id,x=x,y=y)
         session.add(new_pkg)
         session.commit()
 
@@ -139,4 +144,15 @@ def change_outgoingseqworld(seq_num):
         session.commit()
     else:
         raise(ValueError("Seq Doesn't Exist"))
+    
+def choose_truck(wh_id):
+    '''
+    Preliminary method now(Loop through trucks we have, and try to find available
+    '''
+    trucks_list = session.query(Truck).all()
+    #warehouse = session.query(Warehouse).filter(Warehouse.id == wh_id).first()
+    for truck in trucks_list:
+        if truck.status == 'IDLE' or truck.status == 'ARRIVING WAREHOUSE' or truck.status == 'DELIVERING':
+            return truck.truck_id        
+    return False
 
