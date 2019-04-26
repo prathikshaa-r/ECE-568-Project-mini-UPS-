@@ -46,7 +46,7 @@ def init_truck(tr_id,tr_x,tr_y,tr_st):
         session.add(new_tr)
         session.commit()
 
-def init_package(pkg_id, pkg_tr, pkg_wh, username, x, y):
+def init_package(pkg_id, pkg_tr, pkg_wh, username, x, y, status):
     if session.query(Package).filter(Package.packageid == pkg_id).count() != 0:
         raise ValueError("Duplicate Package ID")
     else:
@@ -54,9 +54,21 @@ def init_package(pkg_id, pkg_tr, pkg_wh, username, x, y):
         #user = session.query(User).filter(User.username == username).first()
         user_id = 1#user.id
         new_pkg = Package(packageid = pkg_id, truck_id = pkg_tr,
-                          warehouse_id = pkg_wh, user_id = user_id,x=x,y=y)
+                          warehouse_id = pkg_wh, user_id = user_id,x=x,y=y,status=status)
         session.add(new_pkg)
         session.commit()
+        return
+    
+        
+def init_product(product_list,pckg_id):
+    num_product = session.query(Product).count() + 1
+    for prdct in product_list:
+        new_product = Product(id = num_product, productid = prdct.id, description = prdct.description,amount = prdct.amount, package_id = pckg_id)
+        session.add(new_product)
+        num_product += 1
+    session.commit()
+
+        
 
 def find_package(pkg_id):
     pack_list = session.query(Package).filter(Package.packageid == pkg_id)

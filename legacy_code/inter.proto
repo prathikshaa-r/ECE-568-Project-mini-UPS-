@@ -25,7 +25,7 @@ required int64 seqnum = 7;
 message Deliver{
 required int64 packageid = 1;
 // required int32 truckid = 2;
-required int64 seqnum = 3;
+required int64 seqnum = 2;
 }
 
 // warehouse address so UPS can map warehouse id to address

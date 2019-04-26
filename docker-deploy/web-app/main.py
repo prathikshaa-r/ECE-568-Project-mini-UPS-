@@ -10,6 +10,7 @@ from google.protobuf.internal.encoder import _EncodeVarint
 
 from world_ups_pb2 import *
 from inter_pb2 import *
+import delete
 import inter_pb2 as pb
 import communication
 
@@ -36,12 +37,12 @@ amazon_seq_num = 1
 world_seq_lock = threading.Lock()
 amazon_seq_lock = threading.Lock()
 
-global sock_WORLD
-global sock_AMZ
+# global sock_WORLD
+# global sock_AMZ
 #----------------------------refresh trucks logic----------------------------#
 def refresh_truck_handler(sock_WORLD):
-    global sock_WORLD
-    global world_seq_num
+    # global sock_WORLD
+    # global world_seq_num
     trucks_list = session.query(Truck).all()
     for truck in trucks_list:
         with world_seq_lock:
@@ -83,6 +84,7 @@ def test_new(sock,isAmazon,creation, newStuff):
     if not creation:
         conn_req.worldid = 8 # config file
     if newStuff and not isAmazon:
+        delete.delete_db()
         conn_req.trucks.extend([UInitTruck(id = 1, x = 1, y = 1),])
         init_truck(1,1,1, "IDLE")
         #initTrucks(conn_req)
@@ -100,10 +102,11 @@ def test_new(sock,isAmazon,creation, newStuff):
     conn_resp = AConnected() if isAmazon else UConnected()
     print(conn_req)
     conn_resp.ParseFromString(encoded_response)
-
+#-------------------------------test query code-----------------------------------#
 #    query_truck = UCommands(queries = [UQuery(truckid = 1, seqnum = 5),])
 #    ENCODED_MESSAGE = query_truck.SerializeToString()
 #    communication.sendallMod(ENCODED_MESSAGE,sock)
+#---------------------------------------------------------------------------------#
     print("REQUEST :\n {} \n\nRESPONSE\n : {}\n\n".format(conn_req.__str__(),conn_resp.__str__()))
     return
         
@@ -131,14 +134,8 @@ def truck_status_handler(trucks):
         if not idem_check_world(truck.seqnum):
             continue
         print(truck)
-        change_truck_stat_withXY(truck.truckid, truck.status, truck.x, truck.y)
+        change_truck_stat_withXY(truck.truckid, truck.status, truck.x, truck.y)  # update to db # todo: verify
         init_incomingseqworld(truck.seqnum)
-
-        # update to db
-        # truck.truckid
-        # truck.status
-        # truck.x
-        # truck.y
         pass
     world_send_acks(world_acks)
     return
@@ -150,42 +147,36 @@ def completions_handler(completions):
     global amazon_seq_num
     print("Thanks for reaching warehouse, will notify amazon now. Also, acks to you.")
     world_acks = []
-    #pdb.set_trace()
     for readyTruck in completions:
         world_acks.append(readyTruck.seqnum)
+        pdb.set_trace()
+        if readyTruck.status != "ARRIVE WAREHOUSE":
+            # maybe update db
+            continue
         if not idem_check_world(readyTruck.seqnum):
             continue
-        
+        init_incomingseqworld(readyTruck.seqnum)
         print(readyTruck)
-        # Truck to amazon
+        # Send truck to amazon
         with amazon_seq_lock:
             amazon_seq_num += 1
             seq_num = amazon_seq_num
             print(seq_num)
             pass
 
-        
-        # readyTruck.truckid
-        # # use these to lookup warehouse id from warehouse db
-        # readyTruck.x
-        # readyTruck.y
-
-        # readyTruck.status -- ? why
-
         #FINDING THE WAREHOUSE ID FROM X AND Y COORDS
-
         db_lookup_w_id = find_warehouse(readyTruck.x, readyTruck.y)
-
-        pack = session.query(Package).filter(Warehouse.w_id == db_lookup_w_id).filter(dbTruck.truck_id == readyTruck.truckid).first() 
-
+        pack = session.query(Package).filter(Warehouse.w_id == db_lookup_w_id).filter(dbTruck.truck_id == readyTruck.truckid).filter(Package.status == "PLACED").first() 
+        pack.status = "PICKED UP"
+        session.commit()
         db_lookup_p_id = pack.packageid
-        
         truck = pb.Truck(whid = db_lookup_w_id, truckid = readyTruck.truckid, packageid = db_lookup_p_id, seqnum = seq_num)
-        
         send = UACommands(arrived = [truck,])
+
         # encode and send to amazon
         encoded_msg = send.SerializeToString()
-        communication.sendallMod(encoded_msg,sock_AMZ) 
+        communication.sendallMod(encoded_msg,sock_AMZ)
+
         
         init_outgoingsequa(seq_num,encoded_msg)
         # save seq_num and above encoded msg to outgoing amazon seq db
@@ -206,25 +197,21 @@ def delivered_handler(deliveries_made):
         world_acks.append(delivered.seqnum)
         if not idem_check_world(delivered.seqnum):
             continue
-
+        init_incomingseqworld(delivered.seqnum)
         print(delivered)
-        
         # delivered.truckid -- update truck db?
         with amazon_seq_lock:
             amazon_seq_num += 1
             seq_num = amazon_seq_num
             pass
+        pack = session.query(Package).filter(Package.packageid == delivered.packageid).first()
+        pack.status = "DELIVERED"
+        session.commit()
         delivered_msg = Delivered(packageid = delivered.packageid, seqnum = seq_num)
-        
         send = UACommands(finish=[delivered_msg,])
-        encoded_msg = send.SerializeToString()
+        encoded_msg = send.SerializeToString() # encode msg and send to amazon
         communication.sendallMod(encoded_msg,sock_AMZ)
-        
-        # encode delivered_msg and send to amazon
-
-        # save seq_num and encoded msg to outgoing amazon seq db
-
-        init_outgoingsequa(seq_num,encoded_msg)
+        init_outgoingsequa(seq_num,encoded_msg) # save msg and seq_num to db
 
         pass
     world_send_acks(world_acks)
@@ -272,7 +259,7 @@ def pickup_handler(orders):
         amazon_acks.append(order.seqnum)
         if not idem_check_amazon(order.seqnum):
             continue
-
+        init_incomingsequa(order.seqnum)
         print(order)
         #pdb.set_trace()
         
@@ -287,7 +274,7 @@ def pickup_handler(orders):
 
 
         # ADD PRODUCTS LATER FOR NOW JUST ADDING THE PACKAGE 
-        # products = order.item
+        # products = order.item # Product[]
         # products.id
         # products.description
         # products.amount
@@ -296,8 +283,8 @@ def pickup_handler(orders):
         #find a truck (optimized or not)
         db_lookup_t_id = choose_truck(order.whid)
         init_package(order.packageid, db_lookup_t_id, order.whid, order.upsusername,
-                     order.x, order.y)
-        
+                     order.x, order.y, "PLACED")
+        init_product(order.item, order.packageid)
         
         with world_seq_lock:
             world_seq_num += 1
@@ -331,16 +318,18 @@ def delivery_handler(deliveries):
         amazon_acks.append(delivery.seqnum)
         if not idem_check_amazon(delivery.seqnum):
             continue
-
+        init_incomingsequa(delivery.seqnum)
         print(delivery)
         
         # lookup loation in db and send truck to deliver
 
         pack_object = find_package(delivery.packageid)
+        pack_object.status = "IN PROGRESS"
+        session.commit()
         db_lookup_x = pack_object.x
         db_lookup_y = pack_object.y
         db_lookup_t_id = pack_object.truck_id # pack_object.truck.id???
-
+        
         
         package = UDeliveryLocation(packageid = delivery.packageid, x = db_lookup_x, y = db_lookup_y)
         with world_seq_lock:
@@ -374,7 +363,7 @@ def warehouse_info_handler(warehouses):
         acks.append(warehouse.seqnum)
         if not idem_check_amazon(warehouse.seqnum):
             continue
-        
+        init_incomingsequa(warehouse.seqnum)
         #init warehouse or update
         init_or_up_warehouse(warehouse.id, warehouse.x, warehouse.y)
         pass
@@ -475,16 +464,23 @@ def selector(inputs, outputs, message_queues):
         pass
     return
 
-global sock_WORLD
-global sock_AMZ
-global world_seq_num
-global amazon_seq_num
 
-if __name__ == "__main__":
+def update():
     global sock_WORLD
     global sock_AMZ
-    global world_seq_num
-    global amazon_seq_num
+    while(1):
+        refresh_truck_handler(sock_WORLD)
+        # todo: write these functions
+        # resend_unacked_world_handler(sock_WORLD)
+        # resend_unacked_amazon_handler(sock_WORLD)
+        time.sleep(10)
+
+
+if __name__ == "__main__":
+    # global sock_WORLD
+    # global sock_AMZ
+    # global world_seq_num
+    # global amazon_seq_num
     sock_WORLD = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     test_new(sock_WORLD, isAmazon = False, creation=True,newStuff=True)
 
@@ -499,5 +495,7 @@ if __name__ == "__main__":
     
     t=threading.Thread(target=selector(inputs, outputs, message_queues))
     t.start()
+    update_thread = threading.Thread(target=update(inputs, outputs, message_queues))
+    update_thread.start()
 
     pass

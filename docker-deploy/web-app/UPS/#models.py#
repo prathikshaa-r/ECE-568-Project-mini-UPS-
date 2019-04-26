@@ -20,6 +20,7 @@ class Package(models.Model):
     x = models.IntegerField(null = True, blank = True)
     y = models.IntegerField(null = True, blank = True)
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,related_name = "package_set")
+    status = models.CharField(max_length=10000,default="",null=True, blank=True)
     def __str__(self):
         temp = "<b>packageid : {} | location : (x : {}, y : {}) | status: {}</b><br>".format(self.packageid,
                                                                                self.x, self.y, self.truck.status)
