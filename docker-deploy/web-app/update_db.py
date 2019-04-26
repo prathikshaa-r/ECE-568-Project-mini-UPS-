@@ -1,4 +1,5 @@
 from connect_db import *
+from google.protobuf.json_format import MessageToJson, Parse
 
 # Truck = Base.classes.UPS_truck
 # Warehouse = Base.classes.UPS_warehouse
@@ -51,8 +52,8 @@ def init_package(pkg_id, pkg_tr, pkg_wh, username, x, y, status):
         raise ValueError("Duplicate Package ID")
     else:
         #This part isn't working, 'truck=pkg_tr'
-        #user = session.query(User).filter(User.username == username).first()
-        user_id = 1#user.id
+        user = session.query(User).filter(User.username == username).first()
+        user_id = user.id#= 1#user.id
         new_pkg = Package(packageid = pkg_id, truck_id = pkg_tr,
                           warehouse_id = pkg_wh, user_id = user_id,x=x,y=y,status=status)
         session.add(new_pkg)
@@ -85,6 +86,7 @@ def init_incomingseqworld(seq_num):
         session.commit()
         
 def init_outgoingseqworld(seq_num, enc_msg):
+    #enc_msg = MessageToJson(enc_msg)
     if session.query(OutgoingSeqWorld).filter(OutgoingSeqWorld.sequence_number == seq_num).count() != 0:
         raise ValueError("Duplicate Outgoing Seq")
     else:
@@ -101,6 +103,7 @@ def init_incomingsequa(seq_num):
         session.commit()
         
 def init_outgoingsequa(seq_num, enc_msg):
+    #enc_msg = enc_msg.decode("utf-8")
     if session.query(OutgoingSeqUA).filter(OutgoingSeqUA.sequence_number == seq_num).count() != 0:
         raise ValueError("Duplicate Outgoing UA")
     else:
@@ -132,6 +135,7 @@ def change_truck_stat(tr_id,new_status):
 
 def change_truck_stat_withXY(tr_id,status, x, y):
     truck = session.query(Truck).filter(Truck.truck_id == tr_id).first()
+    print("updating truck with id {}".format(tr_id))
     if truck:
         truck.status = status
         truck.x = x

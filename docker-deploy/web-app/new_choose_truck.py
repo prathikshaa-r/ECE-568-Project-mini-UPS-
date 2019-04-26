@@ -1,10 +1,13 @@
-from connect_db import session, Truck
+from connect_db import session, Truck, Warehouse
 from amazon_ups_interface import location, distance
 import sys
-def imp_choose_truck(wh_x,wh_y):
+def imp_choose_truck(wh_id):
     '''
     Preliminary method now(Loop through trucks we have, and try to find available
     '''
+    wh = session.query(Warehouse).filter(Warehouse.w_id == wh_id).first()
+    wh_x = wh.x
+    wh_y = wh.y
     wh_point = location(wh_x, wh_y)
     trucks_list = session.query(Truck).all()
     closest_truck_id = False #So if 1st is not available, no mistake there
