@@ -1,5 +1,5 @@
 chardet==2.3.0
-Django==2.2
+Django==2.2.24
 protobuf==3.7.1
 psycopg2==2.8.2
 pyasn1==0.1.9
