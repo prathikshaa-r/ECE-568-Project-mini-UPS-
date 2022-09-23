@@ -1,6 +1,6 @@
 chardet==2.3.0
 Django==2.2
-protobuf==3.7.1
+protobuf==3.18.3
 psycopg2==2.8.2
 pyasn1==0.1.9
 pytz==2019.1
